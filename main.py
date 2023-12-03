@@ -26,7 +26,7 @@ def delete_latin_letters(text_path):
     except Exception as e:
         print()
 #викликаємо функцію з прикладом шляху до файлу
-delete_latin_letters('Lazarus.txt')
+delete_latin_letters('psychology.txt')
 
 #функція для видалення дефісу після якого йде пробіл
 def delete_dash(input_file, output_file):
@@ -39,17 +39,17 @@ def delete_dash(input_file, output_file):
     with open(output_file, 'w', encoding='utf-8') as outfile:
         outfile.write(cleared_text)
 #шлях до тексту
-input_file_path = 'Lazarus.txt'
-output_file_path = 'Lazarus.txt'
+input_file_path = 'psychology.txt'
+output_file_path = 'psychology.txt'
 
 delete_dash(input_file_path, output_file_path)
 
 #підключення до бази даних SQLite
-conn = sqlite3.connect('lab_freq_dict_laz.db')
+conn = sqlite3.connect('lab_freq_dict_ps.db')
 cursor = conn.cursor()
 
 #створюємо таблицю для словоформ, ЧМ та лем
-cursor.execute('''CREATE TABLE IF NOT EXISTS words_forms_freq_laz
+cursor.execute('''CREATE TABLE IF NOT EXISTS words_forms_freq_ps
                   (word_form TEXT,
                   gen_freq INTEGER, 
                   sample_1 INTEGER, 
@@ -74,7 +74,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS words_forms_freq_laz
                   sample_20 INTEGER)
 ''')
 
-cursor.execute('''CREATE TABLE IF NOT EXISTS part_of_speech_freq_laz
+cursor.execute('''CREATE TABLE IF NOT EXISTS part_of_speech_freq_ps
                   (part_of_speech TEXT,
                   gen_freq INTEGER,
                   sample_1 INTEGER,
@@ -99,7 +99,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS part_of_speech_freq_laz
                   sample_20 INTEGER)
 ''')
 
-cursor.execute('''CREATE TABLE IF NOT EXISTS lemmas_freq_laz
+cursor.execute('''CREATE TABLE IF NOT EXISTS lemmas_freq_ps
                   (lemma TEXT,
                   gen_freq INTEGER,
                   sample_1 INTEGER,
@@ -124,7 +124,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS lemmas_freq_laz
                   sample_20 INTEGER)
 ''')
 #відкриваємо текстовий файл і переводимо все у нижній регістр
-with open("Lazarus.txt",  encoding = "utf-8") as data_1:
+with open("psychology.txt",  encoding = "utf-8") as data_1:
     text_1 = data_1.read().lower()
 #Видалення пунктуаційних знаків та формування списку слів
 #створюємо порожній список, який буде містити текст без пункт.
@@ -223,12 +223,13 @@ values1_ordered = sorted(values1, key=lambda x:x[1], reverse=True)
 
 #вставляємо дані у створену таблицю
 for i in values1_ordered:
-   cursor.execute("""INSERT OR IGNORE INTO words_forms_freq_laz
+   cursor.execute("""INSERT OR IGNORE INTO words_forms_freq_ps
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", i)
 conn.commit()
 
 #визначаємо функцію для обчислення ЧМ
 part_of_speech = {}
+
 
 def count_part_of_speech(tag, number):
     # Якщо тег частини мови вже присутній в словнику
@@ -277,11 +278,12 @@ values2_ordered = sorted(values2, key=lambda x:x[1], reverse=True)
 
 
 for i in values2_ordered:
-   cursor.execute("""INSERT OR IGNORE INTO part_of_speech_freq_laz
+   cursor.execute("""INSERT OR IGNORE INTO part_of_speech_freq_ps
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", i)
 conn.commit()
 
 # Створюємо словник для зберігання лем та їх кількостей
+# Визначаємо леми за допомогою бібліотеки pymorphy2
 lemmas = {}
 
 def update_lemmas(normal_form, number):
@@ -312,6 +314,7 @@ for i, sample_list in enumerate([sample_1_list, sample_2_list, sample_3_list, sa
         normal_form = parsed.normal_form
         update_lemmas(normal_form, i + 1)
 
+# Пропущені значення заповнюємо нулями та рахуємо загальну частоту
 values3 = list(lemmas.values())
 for i in values3:
     while len(i) <21:
@@ -319,16 +322,12 @@ for i in values3:
 
     gen_freq = sum(i[1:21])
     i.insert(1, gen_freq)
-
+# Сортуємо значення за частотою в зворотньому порядку (за спаданням значення частоти)
 values3_ordered = sorted(values3, key=lambda x:x[1], reverse=True)
-
+#Додаємо до табл БД
 for i in values3_ordered:
-   cursor.execute("""INSERT OR IGNORE INTO lemmas_freq_laz
+   cursor.execute("""INSERT OR IGNORE INTO lemmas_freq_ps
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", i)
 conn.commit()
 
 conn.close()
-
-
-
-
